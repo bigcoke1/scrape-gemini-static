@@ -233,12 +233,12 @@
         if (response) {
             resTextbox.classList.add("response");
             let img = document.createElement("img");
-            img.src = "static/images/AI.png";
+            img.src = "AI.png";
             resTextbox.prepend(img);
         } else {
             resTextbox.classList.add("question");
             let img = document.createElement("img");
-            img.src = "static/images/user.png";
+            img.src = "user.png";
             resTextbox.prepend(img);
         }
         id("chat").prepend(resTextbox);
