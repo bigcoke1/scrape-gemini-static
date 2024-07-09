@@ -234,7 +234,7 @@
     function displayLoading() {
         let resTextbox = document.createElement("article");
         let aiImage = document.createElement("img");
-        aiImage.src = "static/images/AI.png";
+        aiImage.src = "AI.png";
         resTextbox.prepend(aiImage);
 
         let loadingImage = document.createElement("img");
