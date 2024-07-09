@@ -9,7 +9,8 @@
     async function init() {
         qs("#register form").addEventListener("submit", makeRegisterRequest);
         qs("#login form").addEventListener("submit", makeLoginRequest);
-        qs("#login p").addEventListener("click", displayRegister);
+        qs("#login > button").addEventListener("click", displayRegister);
+        qs("#register > button").addEventListener("click", displayLogin);
         qs("#textbox input").addEventListener("change", toggleSubmit);
         id("textbox").addEventListener("submit", makeRequest);
         id("signout-btn").addEventListener("click", signOut);
@@ -22,7 +23,7 @@
         try {
             let params = new FormData();
             params.append("username", (await cookieStore.get("username")).value);
-            let res = await fetch(URL + "/clear", {
+            let res = await fetch("/clear", {
                 method: "POST",
                 body: params
             });
@@ -71,6 +72,7 @@
         id("home").classList.remove("hidden");
         id("login").classList.add("hidden");
         id("register").classList.add("hidden");
+        id("chat").innerHTML = "";
 
         await makeChatRequest();
     }
@@ -78,7 +80,7 @@
     async function makeChatRequest() {
         try {
             let username = (await cookieStore.get("username")).value;
-            let res = await fetch(URL + "/get-all-chat/" + username);
+            let res = await fetch("/get-all-chat/" + username);
             await statusCheck(res);
             res = await res.json();
             populateSidebar(res);
@@ -126,7 +128,7 @@
         try {
             let params = new FormData();
             params.append("id", id);
-            let res = await fetch(URL + "/delete", {
+            let res = await fetch("/delete", {
                 method: "POST",
                 body: params
             });
@@ -141,7 +143,7 @@
         for(let i = 0; i < res.length; i++) {
             let entry = res[i];
             displayEntry(entry[2], false);
-            displayEntry(entry[3], true);
+            displayEntry(entry[3], true, JSON.parse(entry[5]));
         }
     }
 
@@ -163,7 +165,7 @@
             await displayHome();
         } catch (err) {
             console.log(err);
-            handleError("register");
+            displayLoginError();
         }
     }
 
@@ -185,7 +187,7 @@
             await displayHome();
         } catch (err) {
             console.log(err);
-            handleError("login");
+            displayLoginError();
         }
     }
 
@@ -203,6 +205,7 @@
             e.preventDefault();
             let query = qs("#textbox input").value;
             displayEntry(query, false);
+            let loading = displayLoading();
             qs("#textbox button").disabled = true;
             let username = (await cookieStore.get("username")).value;
             let params = new FormData();
@@ -213,8 +216,12 @@
                 body: params
             });
             await statusCheck(res);
-            res = await res.text();
-            displayEntry(res, true);
+            res = await res.json();
+            let aiResponse = res[0];
+            let links = res[1];
+            loading.remove();
+            displayEntry(aiResponse, true, links);
+
             qs("#textbox button").disabled = false;
             qs("#textbox input").value = "";
             await makeChatRequest();
@@ -224,10 +231,46 @@
         }
     }
 
-    function displayEntry(res, response) {
+    function displayLoading() {
+        let resTextbox = document.createElement("article");
+        let aiImage = document.createElement("img");
+        aiImage.src = "static/images/AI.png";
+        resTextbox.prepend(aiImage);
+
+        let loadingImage = document.createElement("img");
+        loadingImage.src = "loading.gif";
+        resTextbox.appendChild(loadingImage);
+        resTextbox.classList.add("chat-entry");
+        resTextbox.classList.add("response");
+        resTextbox.classList.add("shadow");
+
+        id("chat").appendChild(resTextbox);
+        id("chat").scrollTop = id("chat").scrollHeight;
+
+        return resTextbox;
+    }
+
+    function displayEntry(res, response, links=null) {
         let resTextbox = document.createElement("article");
         let text = document.createElement("p");
         text.textContent = res;
+
+        if (links) {
+            // Create a text node for the initial text and the "References:" label
+            text.appendChild(document.createTextNode("\nReferences: "));
+            for (let i = 0; i < links.length; i++) {
+                // Create a text node for the link index and description
+                text.appendChild(document.createTextNode("\n" + (i + 1) + ") "));
+        
+                let urlElement = document.createElement("a");
+                urlElement.href = links[i];
+                urlElement.textContent = links[i];
+                
+                // Append the anchor element
+                text.appendChild(urlElement);
+            }
+        }
+
         resTextbox.appendChild(text);
         resTextbox.classList.add("chat-entry");
         if (response) {
@@ -239,9 +282,10 @@
             resTextbox.classList.add("question");
             let img = document.createElement("img");
             img.src = "user.png";
-            resTextbox.prepend(img);
+            resTextbox.appendChild(img);
         }
-        id("chat").prepend(resTextbox);
+        resTextbox.classList.add("shadow");
+        id("chat").appendChild(resTextbox);
     }
 
     async function feedQuestions(e) {
@@ -281,8 +325,18 @@
         let error = document.createElement("p");
         error.textContent = "An Error Occured. Try Again Later!";
         error.classList.add("error");
-        id(section).prepend(error);
+        id(section).appendChild(error);
     }
+
+    function displayLoginError() {
+        qs("#login p").classList.remove("hidden");
+        qs("#register p").classList.remove("hidden");
+        setTimeout(() => {
+            qs("#login p").classList.add("hidden");
+            qs("#register p").classList.add("hidden");
+        }, 3000);
+    }
+
     /**
      * Returns the element that has the ID attribute with the specified value.
      * @param {string} id - element ID.
