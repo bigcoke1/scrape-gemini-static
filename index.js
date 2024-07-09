@@ -23,7 +23,7 @@
         try {
             let params = new FormData();
             params.append("username", (await cookieStore.get("username")).value);
-            let res = await fetch("/clear", {
+            let res = await fetch(URL + "/clear", {
                 method: "POST",
                 body: params
             });
@@ -80,7 +80,7 @@
     async function makeChatRequest() {
         try {
             let username = (await cookieStore.get("username")).value;
-            let res = await fetch("/get-all-chat/" + username);
+            let res = await fetch(URL + "/get-all-chat/" + username);
             await statusCheck(res);
             res = await res.json();
             populateSidebar(res);
@@ -128,7 +128,7 @@
         try {
             let params = new FormData();
             params.append("id", id);
-            let res = await fetch("/delete", {
+            let res = await fetch("URL + /delete", {
                 method: "POST",
                 body: params
             });
