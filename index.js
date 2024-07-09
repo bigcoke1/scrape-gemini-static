@@ -3,7 +3,7 @@
 (function () {
     window.addEventListener("load", init);
 
-    const URL = "https://sorrymaker.pythonanywhere.com"
+    const URL = "http://127.0.0.1:5000"
     const MONTH = 2592000000;
 
     async function init() {
